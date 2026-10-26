@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سنترال العمدة برو v6 | سحابي متزامن Firebase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+        .glass-card { background: rgba(30, 41, 59, 0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .tab-active { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <!-- Top Navigation Bar -->
+    <header class="glass-card sticky top-0 z-40 border-b border-slate-700/80 shadow-lg">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-cloud-bolt text-lg sm:text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-xl font-extrabold text-white flex items-center gap-1.5">
+                        سنترال العمدة <span class="text-[10px] sm:text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">v6.0 Pro Max</span>
+                    </h1>
+                    <p class="text-[10px] sm:text-xs text-slate-400">طابور واتساب الذكي المانع للحظر + فصل رقم التواصل</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <button onclick="openFirebaseModal()" id="cloudStatusBtn" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-cloud"></i> <span id="cloudStatusText">ربط Firebase</span>
+                </button>
+                <button onclick="openLineModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition">
+                    <i class="fa-solid fa-plus"></i> <span>إضافة خط</span>
+                </button>
+                <button onclick="openBulkModal()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition">
+                    <i class="fa-solid fa-file-import"></i> <span>استيراد النوت</span>
+                </button>
+                <button onclick="openPackagesModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-boxes-stacked"></i> <span class="hidden sm:inline">الباقات والأسعار</span>
+                </button>
+                <button onclick="openRulesModal()" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 font-bold px-2.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1 transition">
+                    <i class="fa-solid fa-bullhorn"></i> <span class="hidden md:inline">العروض</span>
+                </button>
+                <button onclick="exportExcel()" class="bg-slate-700 hover:bg-slate-600 text-emerald-400 px-2.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center transition" title="تصدير شيت إكسيل">
+                    <i class="fa-solid fa-file-excel"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-3 sm:px-4 mt-4 sm:mt-6 space-y-4 sm:space-y-5">
+
+        <!-- Dashboard Financial Cards -->
+        <section class="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-4">
+            <div class="glass-card p-3 sm:p-4 rounded-2xl border-r-4 border-r-blue-500">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] sm:text-xs text-slate-400 font-semibold">إجمالي الخطوط</span>
+                    <i class="fa-solid fa-sim-card text-blue-400 text-xs sm:text-sm"></i>
+                </div>
+                <div class="text-xl sm:text-2xl font-extrabold mt-1 text-white"><span id="statTotalLines">0</span> <small class="text-[10px] font-normal text-slate-400">خط</small></div>
+                <div class="text-[10px] sm:text-[11px] text-blue-300 mt-0.5" id="statActivatedCount">⚡ مفعل: 0 | ⏳ غير مفعل: 0</div>
+            </div>
+
+            <div class="glass-card p-3 sm:p-4 rounded-2xl border-r-4 border-r-slate-400">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] sm:text-xs text-slate-400 font-semibold">إجمالي التكلفة</span>
+                    <i class="fa-solid fa-building-columns text-slate-400 text-xs sm:text-sm"></i>
+                </div>
+                <div class="text-xl sm:text-2xl font-extrabold mt-1 text-slate-200"><span id="statTotalCost">0</span> <small class="text-[10px] font-normal">ج.م</small></div>
+                <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">المطلوب سداده للشركات</div>
+            </div>
+
+            <div class="glass-card p-3 sm:p-4 rounded-2xl border-r-4 border-r-indigo-500">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] sm:text-xs text-slate-400 font-semibold">إجمالي البيع</span>
+                    <i class="fa-solid fa-sack-dollar text-indigo-400 text-xs sm:text-sm"></i>
+                </div>
+                <div class="text-xl sm:text-2xl font-extrabold mt-1 text-indigo-300"><span id="statTotalSale">0</span> <small class="text-[10px] font-normal">ج.م</small></div>
+                <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">المحصل الكاش: <span id="statCollected" class="text-emerald-400 font-bold">0</span> ج</div>
+            </div>
+
+            <div class="glass-card p-3 sm:p-4 rounded-2xl border-r-4 border-r-emerald-500">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] sm:text-xs text-slate-400 font-semibold">صافي الأرباح</span>
+                    <i class="fa-solid fa-chart-line text-emerald-400 text-xs sm:text-sm"></i>
+                </div>
+                <div class="text-xl sm:text-2xl font-extrabold mt-1 text-emerald-400"><span id="statTotalProfit">0</span> <small class="text-[10px] font-normal">ج.م</small></div>
+                <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">مكسبك الصافي</div>
+            </div>
+
+            <div onclick="quickFilterDebt()" class="glass-card p-3 sm:p-4 rounded-2xl border-r-4 border-r-rose-500 col-span-2 md:col-span-1 cursor-pointer hover:bg-rose-950/30 transition">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] sm:text-xs text-rose-300 font-bold">الآجل (فلوسك بره)</span>
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse"></i>
+                </div>
+                <div class="text-xl sm:text-2xl font-extrabold mt-1 text-rose-400"><span id="statTotalDebt">0</span> <small class="text-[10px] font-normal">ج.م</small></div>
+                <div class="text-[10px] sm:text-[11px] text-rose-300/90 mt-0.5 underline">اضغط لعرض المديونيات <span id="statDebtCount">(0 خط)</span></div>
+            </div>
+        </section>
+
+        <!-- Company Tabs & Bulk Broadcast Buttons -->
+        <section class="glass-card p-2.5 rounded-2xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
+            <div class="flex flex-wrap gap-1 sm:gap-1.5" id="tabsContainer">
+                <button onclick="switchTab('all')" data-tab="all" class="tab-btn tab-active px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-layer-group"></i> الكل <span id="badge_all" class="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchTab('etisalat_1')" data-tab="etisalat_1" class="tab-btn hover:bg-slate-800 text-slate-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-lime-500"></span> اتصالات 1 <span id="badge_etisalat_1" class="bg-slate-800 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchTab('etisalat_15')" data-tab="etisalat_15" class="tab-btn hover:bg-slate-800 text-slate-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-lime-500"></span> اتصالات 15 <span id="badge_etisalat_15" class="bg-slate-800 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchTab('we_1')" data-tab="we_1" class="tab-btn hover:bg-slate-800 text-slate-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> وي 1 <span id="badge_we_1" class="bg-slate-800 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchTab('we_16')" data-tab="we_16" class="tab-btn hover:bg-slate-800 text-slate-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> وي 16 <span id="badge_we_16" class="bg-slate-800 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchTab('vodafone_all')" data-tab="vodafone_all" class="tab-btn hover:bg-slate-800 text-slate-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span> فودافون <span id="badge_vodafone_all" class="bg-slate-800 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+            </div>
+
+            <!-- Smart Bulk WhatsApp & Cycle Actions -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <button onclick="openQueueModal('renewal')" class="text-[11px] bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow transition">
+                    <i class="fa-brands fa-whatsapp"></i> 🔔 تذكير الكل بالتجديد وتأكيده
+                </button>
+                <button onclick="openQueueModal('debt')" class="text-[11px] bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow transition">
+                    <i class="fa-brands fa-whatsapp"></i> 💰 تذكير الكل بالدفع (للآجل)
+                </button>
+                <button onclick="bulkActivateAsCredit()" class="text-[11px] bg-amber-500/15 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-bolt"></i> تفعيل الكل كـ آجل
+                </button>
+                <button onclick="resetCycleStatus()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-rotate"></i> دورة جديدة
+                </button>
+            </div>
+        </section>
+
+        <!-- Search & Smart Filters Bar -->
+        <section class="glass-card p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-2.5">
+            <div class="relative flex-1 min-w-[200px]">
+                <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-xs"></i>
+                <input type="text" id="searchInput" oninput="renderApp()" placeholder="ابحث برقم التفعيل، رقم التواصل، اسم العميل، أو الباقة..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pr-9 pl-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <select id="activationFilter" onchange="renderApp()" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-amber-300 font-bold focus:outline-none">
+                    <option value="all">⚡ كل حالات التفعيل</option>
+                    <option value="activated">⚡ تم التفعيل فقط</option>
+                    <option value="not_activated">⏳ لم تفعل بعد</option>
+                </select>
+
+                <select id="statusFilter" onchange="renderApp()" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-200 font-bold focus:outline-none">
+                    <option value="all">💰 كل حالات الدفع</option>
+                    <option value="unpaid_all">🚨 الآجل (لم يدفع)</option>
+                    <option value="activated_unpaid">🔥 مفعل ولم يدفع (آجل)</option>
+                    <option value="paid_not_activated">⚠️ دفع ولم يفعل بعد</option>
+                    <option value="paid">✅ تم الدفع (خالص)</option>
+                    <option value="pending">🔔 انتظار التجديد</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- MOBILE CARDS VIEW -->
+        <section id="mobileCardsView" class="md:hidden space-y-3"></section>
+
+        <!-- DESKTOP TABLE VIEW -->
+        <section id="desktopTableView" class="hidden md:block glass-card rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-sm">
+                    <thead class="bg-slate-800/90 text-slate-300 text-xs uppercase border-b border-slate-700">
+                        <tr>
+                            <th class="py-3.5 px-4 w-60">العميل / رقم التواصل</th>
+                            <th class="py-3.5 px-3">رقم التفعيل والباقة وحالة (التفعيل / الدفع)</th>
+                            <th class="py-3.5 px-3 w-44">إجمالي الحساب</th>
+                            <th class="py-3.5 px-3 text-center w-52">رسائل واتساب الذكية</th>
+                        </tr>
+                    </thead>
+                    <tbody id="linesTableBody" class="divide-y divide-slate-800"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <div id="emptyState" class="hidden glass-card rounded-2xl py-12 text-center text-slate-400">
+            <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-600"></i>
+            <p class="font-bold text-base text-slate-300">لا توجد خطوط مسجلة في هذا القسم حالياً</p>
+            <p class="text-xs mt-1">اضغط على "استيراد النوت" أو "إضافة خط" بالأعلى للبدء</p>
+        </div>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODAL: ANTI-BAN WHATSAPP BROADCAST QUEUE -->
+    <!-- ========================================== -->
+    <div id="queueModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-card w-full max-w-3xl rounded-2xl border border-emerald-500/40 shadow-2xl overflow-hidden max-h-[94vh] flex flex-col">
+            <div class="px-5 py-3.5 bg-slate-800/95 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2" id="queueModalTitle">
+                    <i class="fa-brands fa-whatsapp text-emerald-400 text-xl"></i> طابور الإرسال الذكي المانع للحظر
+                </h2>
+                <button onclick="closeQueueModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+                <!-- Anti-Ban Protection Settings Bar -->
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer text-amber-300 font-bold">
+                        <input type="checkbox" id="queueHideGroupLink" checked onchange="renderQueueCurrentCard()" class="w-4 h-4 rounded accent-amber-500">
+                        <span>🛡️ إخفاء لينك الجروب أثناء الإرسال الجماعي (حماية قصوى من الحظر)</span>
+                    </label>
+                    <span class="text-slate-400 text-[11px]">✨ يتم تغيير صيغة التحية تلقائياً لكل عميل لمنع الحظر</span>
+                </div>
+
+                <!-- Active Customer Card in Queue -->
+                <div id="queueActiveCard" class="bg-gradient-to-br from-slate-900 to-slate-800 p-4 rounded-2xl border-2 border-emerald-500/50 space-y-3 shadow-lg"></div>
+
+                <!-- Full Queue List -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5 text-xs">
+                        <span class="font-bold text-slate-300">قائمة العملاء في الطابور (<span id="queueProgressCounter">0 / 0</span>):</span>
+                        <button onclick="resetQueueSentFlags()" class="text-blue-400 hover:underline text-[11px]">إعادة تعيين الكل</button>
+                    </div>
+                    <div id="queueListContainer" class="bg-slate-900 border border-slate-700 rounded-xl max-h-48 overflow-y-auto divide-y divide-slate-800 text-xs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 0: FIREBASE REALTIME CLOUD SYNC -->
+    <!-- ========================================== -->
+    <div id="firebaseModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="glass-card w-full max-w-2xl rounded-2xl border border-amber-500/40 shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-5 py-4 bg-slate-800/90 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-base font-extrabold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-bolt text-amber-400"></i> المزامنة السحابية الفورية (Firebase Sync)
+                </h2>
+                <button onclick="closeFirebaseModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-amber-300 mb-1">رابط قاعدة البيانات (Database URL) أو كود firebaseConfig *</label>
+                    <textarea id="fbConfigInput" rows="3" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-xs text-white font-mono"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-emerald-400 mb-1">كود الغرفة السري للمزامنة (نفس الكود على الموبايل والماك بوك) *</label>
+                    <input type="text" id="fbSyncKeyInput" value="omda_central_vip" class="w-full bg-slate-900 border border-emerald-500/50 rounded-xl px-3 py-2 text-sm text-white font-mono">
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-700">
+                    <div class="flex gap-2">
+                        <button type="button" onclick="forcePushLocalToCloud()" class="bg-slate-700 hover:bg-slate-600 text-xs text-blue-300 font-bold px-3 py-2 rounded-xl">رفع داتا الجهاز للسحابة</button>
+                        <button type="button" onclick="disconnectFirebase()" class="bg-rose-950/60 text-xs text-rose-300 px-3 py-2 rounded-xl">إيقاف الربط</button>
+                    </div>
+                    <button type="button" onclick="saveAndConnectFirebase()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-2 rounded-xl text-xs sm:text-sm">حفظ وربط المزامنة الآن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 1: ADD / EDIT CUSTOMER & LINES -->
+    <!-- ========================================== -->
+    <div id="lineModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-card w-full max-w-4xl rounded-2xl border border-slate-600 shadow-2xl overflow-hidden max-h-[94vh] flex flex-col">
+            <div class="px-5 py-3.5 bg-slate-800/90 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-2" id="modalTitle">
+                    <i class="fa-solid fa-user-plus text-emerald-400"></i> إضافة عميل / أرقام
+                </h2>
+                <button onclick="closeLineModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <form id="lineForm" onsubmit="saveCustomerLines(event)" class="p-4 sm:p-5 overflow-y-auto space-y-4">
+                <input type="hidden" id="editingLineId">
+
+                <div class="bg-slate-900/90 p-3.5 rounded-2xl border border-slate-700">
+                    <h3 class="text-xs font-extrabold text-blue-400 mb-2.5">1. بيانات العميل (لو تركت رقم التواصل فارغاً سيعتبره السيستم نفس رقم التفعيل تلقائياً)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">اسم العميل (اختياري)</label>
+                            <input type="text" id="custName" placeholder="اتركه فارغاً لو بدون اسم" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-emerald-400 mb-1">رقم التواصل واتساب (اختياري)</label>
+                            <input type="tel" id="custContact" placeholder="اتركه فارغاً ليكون نفس رقم التفعيل" class="w-full bg-slate-800 border border-emerald-600/50 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">ملاحظات (اختياري)</label>
+                            <input type="text" id="custNotes" placeholder="مثال: باسورد انا فودافون..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <h3 class="text-xs font-extrabold text-amber-400">2. أرقام التفعيل والباقات</h3>
+                        <button type="button" id="addMoreLineBtn" onclick="addLineRowInModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-plus-circle"></i> + إضافة رقم تفعيل آخر لنفس العميل
+                        </button>
+                    </div>
+                    <div id="modalLinesContainer" class="space-y-3"></div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-700 flex justify-between items-center">
+                    <span class="text-xs text-slate-400" id="modalTotalSummary">إجمالي الخطوط: 1</span>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeLineModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-xs font-bold text-slate-200">إلغاء</button>
+                        <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs sm:text-sm font-bold text-white shadow-lg">
+                            <i class="fa-solid fa-check ml-1"></i> حفظ ومزامنة
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 2: SMART BULK IMPORT (SEPARATE ACTIVATION & CONTACT COLUMNS) -->
+    <!-- ========================================== -->
+    <div id="bulkModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-card w-full max-w-6xl rounded-2xl border border-purple-500/40 shadow-2xl overflow-hidden max-h-[94vh] flex flex-col">
+            <div class="px-5 py-3.5 bg-slate-800/90 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> الاستيراد الذكي من النوت باد (فصل رقم التفعيل عن رقم التواصل)
+                </h2>
+                <button onclick="closeBulkModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+                <div class="bg-slate-900/90 p-3.5 rounded-2xl border border-purple-500/30 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">1. الشركة والفاتورة</label>
+                        <select id="bulkCycle" onchange="parseBulkText()" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
+                            <option value="we_1">🟣 وي WE - فاتورة 1</option>
+                            <option value="we_16">🟣 وي WE - فاتورة 16</option>
+                            <option value="etisalat_1">🟢 اتصالات - فاتورة 1</option>
+                            <option value="etisalat_15">🟢 اتصالات - فاتورة 15</option>
+                            <option value="vodafone_all">🔴 فودافون - طول الشهر</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-amber-300 mb-1">2. حالة التفعيل للدفعة</label>
+                        <select id="bulkActivated" onchange="parseBulkText()" class="w-full bg-slate-800 border border-amber-500/40 rounded-xl px-2.5 py-2 text-xs text-amber-300 font-bold">
+                            <option value="false">⏳ لم تفعل بعد</option>
+                            <option value="true">⚡ تم التفعيل</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-rose-300 mb-1">3. حالة الدفع للدفعة</label>
+                        <select id="bulkStatus" onchange="parseBulkText()" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
+                            <option value="pending">🔔 انتظار التجديد</option>
+                            <option value="credit">🚨 آجل (يضاف للآجل فوق)</option>
+                            <option value="paid">✅ تم الدفع (خالص)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <div class="text-[11px] text-emerald-300 bg-slate-800/80 px-3 py-2 rounded-xl border border-emerald-500/30 w-full">
+                            ✅ لو سبت "رقم التواصل" فاضي هيفهم إنه نفس رقم التفعيل!
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <div class="lg:col-span-4 flex flex-col">
+                        <label class="block text-xs font-bold text-slate-300 mb-1.5">انسخ النوت باد والصقها هنا:</label>
+                        <textarea id="bulkRawText" oninput="parseBulkText()" rows="9" placeholder="مثال:&#10;01557497572&#10;باقة 10 جيجا&#10;&#10;01554859025&#10;باقة 30 جيجا" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white font-mono focus:border-purple-500 focus:outline-none leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="lg:col-span-8 flex flex-col">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-xs font-bold text-emerald-400">المعاينة (<span id="bulkCountBadge">0</span> رقم):</span>
+                            <span class="text-[10px] text-slate-400">خانة رقم التواصل منفصلة (اتركها فارغة لو نفس الرقم أو اكتب رقم آخر)</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-700 rounded-xl overflow-auto max-h-64 flex-1">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-slate-800 text-slate-300 sticky top-0">
+                                    <tr>
+                                        <th class="p-2">رقم التفعيل</th>
+                                        <th class="p-2 text-emerald-400">رقم التواصل (اختياري)</th>
+                                        <th class="p-2">الباقة المقروءة</th>
+                                        <th class="p-2">التكلفة</th>
+                                        <th class="p-2">البيع</th>
+                                        <th class="p-2">الاسم (اختياري)</th>
+                                        <th class="p-2">حذف</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bulkPreviewBody" class="divide-y divide-slate-800">
+                                    <tr><td colspan="7" class="p-8 text-center text-slate-500">الصق النوت في المربع الجانبي لتظهر الأرقام هنا فوراً...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-700 flex justify-end gap-2">
+                    <button type="button" onclick="closeBulkModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-xs font-bold text-slate-200">إلغاء</button>
+                    <button type="button" onclick="confirmBulkImport()" class="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs sm:text-sm font-bold text-white shadow-lg">
+                        <i class="fa-solid fa-check-double ml-1"></i> تأكيد وإضافة كل الأرقام
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 3: PACKAGES & PRICING MANAGER -->
+    <!-- ========================================== -->
+    <div id="packagesModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-card w-full max-w-4xl rounded-2xl border border-slate-600 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="px-5 py-3.5 bg-slate-800/90 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-blue-400"></i> إدارة الباقات والأسعار + أرقام التحويل
+                </h2>
+                <button onclick="closePackagesModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-5">
+                <div class="bg-slate-900/95 p-3.5 rounded-2xl border border-blue-500/30 space-y-3">
+                    <h3 class="text-xs font-extrabold text-blue-400">إضافة باقة جديدة للشركة</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-300 mb-1">الشركة *</label>
+                            <select id="newPkgCompany" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-2 py-2 text-xs text-white font-bold">
+                                <option value="we">🟣 وي WE</option>
+                                <option value="etisalat">🟢 اتصالات e&</option>
+                                <option value="vodafone">🔴 فودافون</option>
+                            </select>
+                        </div>
+                        <div class="col-span-1 sm:col-span-2">
+                            <label class="block text-[10px] font-bold text-amber-300 mb-1">الجيجات أو الفليكسات *</label>
+                            <input type="text" id="newPkgGiga" placeholder="مثال: 30GB" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-2.5 py-2 text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-indigo-300 mb-1">الدقايق (اختياري)</label>
+                            <input type="text" id="newPkgMins" placeholder="1500 MINS" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-2.5 py-2 text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1">التكلفة *</label>
+                            <input type="number" id="newPkgCost" placeholder="التكلفة" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-emerald-400 mb-1">البيع *</label>
+                            <div class="flex gap-1">
+                                <input type="number" id="newPkgSale" placeholder="البيع" class="w-full bg-slate-800 border border-emerald-500/50 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
+                                <button type="button" onclick="addNewCompanyPackage()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 rounded-xl text-xs">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5">
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="filterPkgModalCompany('we')" id="pkgTab_we" class="pkg-co-tab bg-blue-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition">🟣 باقات WE</button>
+                        <button onclick="filterPkgModalCompany('etisalat')" id="pkgTab_etisalat" class="pkg-co-tab bg-slate-800 text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold transition">🟢 باقات اتصالات e&</button>
+                        <button onclick="filterPkgModalCompany('vodafone')" id="pkgTab_vodafone" class="pkg-co-tab bg-slate-800 text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold transition">🔴 باقات فودافون</button>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-800 text-slate-300">
+                                <tr>
+                                    <th class="py-2 px-3">الباقة</th>
+                                    <th class="py-2 px-2">التكلفة</th>
+                                    <th class="py-2 px-2">البيع</th>
+                                    <th class="py-2 px-2">الربح</th>
+                                    <th class="py-2 px-2 text-center">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pkgModalTableBody" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/90 p-3.5 rounded-2xl border border-slate-700 space-y-3">
+                    <h3 class="text-xs font-bold text-blue-400">أرقام الدفع ولينك جروب الواتساب</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <input type="text" id="settingWallet" placeholder="رقم المحفظة 1" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                        <input type="text" id="settingInstapay" placeholder="رقم المحفظة 2 / انستا باي" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                        <input type="text" id="settingGroupLink" placeholder="لينك الجروب" class="bg-slate-800 border border-emerald-600/40 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+                    </div>
+                    <button onclick="savePaymentSettings()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl">حفظ الإعدادات</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 4: OFFERS & RULES -->
+    <!-- ========================================== -->
+    <div id="rulesModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="glass-card w-full max-w-3xl rounded-2xl border border-slate-600 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="px-5 py-3.5 bg-slate-800/90 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-base font-extrabold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn text-amber-400"></i> منشور الأسعار والشروط ولينك الجروب
+                </h2>
+                <button onclick="closeRulesModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-3">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="generateOfferPost('all')" class="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">📋 كل الشركات</button>
+                    <button onclick="generateOfferPost('we')" class="bg-purple-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">🟣 WE فقط</button>
+                    <button onclick="generateOfferPost('etisalat')" class="bg-lime-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">🟢 اتصالات فقط</button>
+                    <button onclick="generateOfferPost('vodafone')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">🔴 فودافون فقط</button>
+                </div>
+                <textarea id="offerPostTextarea" rows="12" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white leading-relaxed"></textarea>
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                    <button onclick="copyOfferPost()" class="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl">نسخ المنشور</button>
+                    <div class="flex items-center gap-1.5">
+                        <input type="tel" id="directOfferPhone" placeholder="رقم واتساب" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono w-40">
+                        <button onclick="sendOfferPostWhatsApp()" class="bg-green-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl"><i class="fa-brands fa-whatsapp"></i> إرسال</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Storage Keys ---
+        const STORAGE_KEY_LINES = 'omda_telecom_lines_v1';
+        const STORAGE_KEY_SETTINGS = 'omda_telecom_settings_v1';
+        const STORAGE_KEY_COMPANY_PKGS = 'omda_telecom_company_pkgs_v3';
+        const STORAGE_KEY_FB_CONFIG = 'omda_telecom_fb_config_v4';
+
+        let currentTab = 'all';
+        let currentPkgModalCo = 'we';
+        let bulkParsedItems = [];
+
+        // Queue state
+        let queueItems = [];
+        let queueCurrentIndex = 0;
+        let queueMode = 'renewal'; // 'renewal' or 'debt'
+
+        // Firebase variables
+        let fbDatabase = null;
+        let fbSyncRef = null;
+        let isApplyingRemoteUpdate = false;
+        let fbConnectionSettings = JSON.parse(localStorage.getItem(STORAGE_KEY_FB_CONFIG)) || { rawInput: '', databaseURL: '', syncKey: 'omda_central_vip' };
+
+        const defaultCompanyPackages = [
+            // WE Packages 🟣 (Updated with your exact costs from screenshot: 160, 210, 330, 400)
+            { id: 'we_0', company: 'we', giga: '4GB', mins: '500 MINS', cost: 110, sale: 140 },
+            { id: 'we_1', company: 'we', giga: '10GB', mins: '1000 MINS', cost: 160, sale: 190 },
+            { id: 'we_2', company: 'we', giga: '15GB', mins: '1200 MINS', cost: 210, sale: 250 },
+            { id: 'we_3', company: 'we', giga: '20GB', mins: '1500 MINS', cost: 260, sale: 300 },
+            { id: 'we_4', company: 'we', giga: '30GB', mins: '1500 MINS', cost: 330, sale: 370 },
+            { id: 'we_5', company: 'we', giga: '40GB', mins: '1500 MINS', cost: 400, sale: 450 },
+            { id: 'we_6', company: 'we', giga: '50GB', mins: '2000 MINS', cost: 465, sale: 520 },
+
+            // Etisalat e& Packages 🟢
+            { id: 'et_1', company: 'etisalat', giga: '10GB', mins: '1200 MINS', cost: 190, sale: 220 },
+            { id: 'et_2', company: 'etisalat', giga: '20GB', mins: '1500 MINS', cost: 300, sale: 340 },
+            { id: 'et_3', company: 'etisalat', giga: '30GB', mins: '1500 MINS', cost: 360, sale: 400 },
+            { id: 'et_4', company: 'etisalat', giga: '40GB', mins: '2000 MINS', cost: 450, sale: 500 },
+            { id: 'et_5', company: 'etisalat', giga: '50GB', mins: '2000 MINS', cost: 530, sale: 590 },
+
+            // Vodafone Flex Packages 🔴
+            { id: 'vf_1', company: 'vodafone', giga: '5200 فليكس', mins: '', cost: 125, sale: 150 },
+            { id: 'vf_2', company: 'vodafone', giga: '6500 فليكس', mins: '', cost: 160, sale: 190 },
+            { id: 'vf_3', company: 'vodafone', giga: '10400 فليكس', mins: '', cost: 215, sale: 250 }
+        ];
+
+        let lines = JSON.parse(localStorage.getItem(STORAGE_KEY_LINES)) || [];
+        let companyPackages = JSON.parse(localStorage.getItem(STORAGE_KEY_COMPANY_PKGS)) || defaultCompanyPackages;
+        let settings = JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS)) || {};
+
+        if (!settings.wallet) settings.wallet = '01004066461';
+        if (!settings.instapay) settings.instapay = '01554586199';
+        if (!settings.groupLink) settings.groupLink = 'https://chat.whatsapp.com/DFKwQ3pxek7BEifB1x7hDl?s=cl&p=a&ilr=1';
+
+        function saveData(skipCloudPush = false) {
+            localStorage.setItem(STORAGE_KEY_LINES, JSON.stringify(lines));
+            localStorage.setItem(STORAGE_KEY_COMPANY_PKGS, JSON.stringify(companyPackages));
+            localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+            if (!skipCloudPush && fbSyncRef && !isApplyingRemoteUpdate) {
+                pushDataToFirebase();
+            }
+        }
+
+        // ==========================================
+        // FIREBASE REALTIME CLOUD SYNC
+        // ==========================================
+        function extractDatabaseUrl(rawText) {
+            const text = (rawText || '').trim();
+            const urlMatch = text.match(/https:\/\/[a-zA-Z0-9-]+\.(firebaseio\.com|[\w.-]+\.firebasedatabase\.app)/);
+            if (urlMatch) return urlMatch[0];
+            const projMatch = text.match(/projectId\s*:\s*["']([^"']+)["']/);
+            if (projMatch && projMatch[1]) return `https://${projMatch[1]}-default-rtdb.firebaseio.com`;
+            return '';
+        }
+
+        function updateCloudStatusUI(state, text) {
+            const btn = document.getElementById('cloudStatusBtn');
+            const label = document.getElementById('cloudStatusText');
+            label.innerText = text;
+            if (state === 'connected') {
+                btn.className = 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5';
+                btn.querySelector('i').className = 'fa-solid fa-cloud-check text-emerald-400';
+            } else if (state === 'syncing') {
+                btn.className = 'bg-blue-600/20 text-blue-300 border border-blue-500/40 font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5';
+                btn.querySelector('i').className = 'fa-solid fa-arrows-rotate fa-spin text-blue-400';
+            } else {
+                btn.className = 'bg-slate-800 text-amber-400 border border-amber-500/40 font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5';
+                btn.querySelector('i').className = 'fa-solid fa-cloud text-amber-400';
+            }
+        }
+
+        function initFirebaseConnection() {
+            if (!fbConnectionSettings.databaseURL || !fbConnectionSettings.syncKey) return;
+            try {
+                updateCloudStatusUI('syncing', 'يتصل...');
+                if (!firebase.apps.length) firebase.initializeApp({ databaseURL: fbConnectionSettings.databaseURL });
+                fbDatabase = firebase.database();
+                fbSyncRef = fbDatabase.ref('omda_central_v4/' + fbConnectionSettings.syncKey);
+
+                fbSyncRef.on('value', (snapshot) => {
+                    const cloudData = snapshot.val();
+                    if (!cloudData) {
+                        pushDataToFirebase();
+                        updateCloudStatusUI('connected', 'متزامن 🟢');
+                        return;
+                    }
+                    isApplyingRemoteUpdate = true;
+                    lines = Array.isArray(cloudData.lines) ? cloudData.lines : [];
+                    if (Array.isArray(cloudData.companyPackages) && cloudData.companyPackages.length) companyPackages = cloudData.companyPackages;
+                    if (cloudData.settings) settings = cloudData.settings;
+                    saveData(true);
+                    renderApp();
+                    isApplyingRemoteUpdate = false;
+                    updateCloudStatusUI('connected', 'متزامن 🟢');
+                }, () => updateCloudStatusUI('disconnected', 'خطأ صلاحيات'));
+            } catch (e) { updateCloudStatusUI('disconnected', 'خطأ رابط'); }
+        }
+
+        function pushDataToFirebase() {
+            if (!fbSyncRef) return;
+            updateCloudStatusUI('syncing', 'يزامن...');
+            fbSyncRef.set({ lines: lines || [], companyPackages: companyPackages || [], settings: settings || {}, updatedAt: Date.now() })
+                .then(() => updateCloudStatusUI('connected', 'متزامن 🟢'))
+                .catch(() => updateCloudStatusUI('disconnected', 'فشل الرفع'));
+        }
+
+        function openFirebaseModal() {
+            document.getElementById('fbConfigInput').value = fbConnectionSettings.rawInput || fbConnectionSettings.databaseURL || '';
+            document.getElementById('fbSyncKeyInput').value = fbConnectionSettings.syncKey || 'omda_central_vip';
+            document.getElementById('firebaseModal').classList.remove('hidden');
+        }
+        function closeFirebaseModal() { document.getElementById('firebaseModal').classList.add('hidden'); }
+        function saveAndConnectFirebase() {
+            const rawInput = document.getElementById('fbConfigInput').value.trim();
+            const syncKey = document.getElementById('fbSyncKeyInput').value.trim().replace(/[.#$\[\]\s]/g, '_') || 'omda_central_vip';
+            const dbUrl = extractDatabaseUrl(rawInput);
+            if (!dbUrl) return alert('تأكد من لصق رابط قاعدة بيانات Firebase صحيح!');
+            fbConnectionSettings = { rawInput, databaseURL: dbUrl, syncKey };
+            localStorage.setItem(STORAGE_KEY_FB_CONFIG, JSON.stringify(fbConnectionSettings));
+            closeFirebaseModal();
+            location.reload();
+        }
+        function forcePushLocalToCloud() { if (fbSyncRef) { pushDataToFirebase(); alert('تم الرفع للسحابة!'); } }
+        function disconnectFirebase() { if (confirm('إيقاف المزامنة؟')) { localStorage.removeItem(STORAGE_KEY_FB_CONFIG); location.reload(); } }
+
+        // ==========================================
+        // CORE HELPERS: SEPARATE CONTACT vs ACTIVATION NUMBER
+        // ==========================================
+        const cycleLabels = {
+            'etisalat_1': { name: 'اتصالات (1)', company: 'etisalat', badge: 'bg-lime-500/20 text-lime-400 border-lime-500/30', defaultDay: 1 },
+            'etisalat_15': { name: 'اتصالات (15)', company: 'etisalat', badge: 'bg-lime-500/20 text-lime-400 border-lime-500/30', defaultDay: 15 },
+            'we_1': { name: 'وي WE (1)', company: 'we', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30', defaultDay: 1 },
+            'we_16': { name: 'وي WE (16)', company: 'we', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30', defaultDay: 16 },
+            'vodafone_all': { name: 'فودافون', company: 'vodafone', badge: 'bg-red-500/20 text-red-400 border-red-500/30', defaultDay: new Date().getDate() }
+        };
+
+        // Effective Contact Number: If contactNum is empty, automatically fallback to activationNum!
+        function getEffectiveContact(line) {
+            const c = (line.contactNum || '').trim();
+            return c.length > 0 ? c : (line.activationNum || '').trim();
+        }
+
+        function formatPkgFullTitle(pkg) { return pkg.mins ? `${pkg.giga} + ${pkg.mins}` : `${pkg.giga}`; }
+        function getCompanyFromCycle(cycle) { return (cycleLabels[cycle] && cycleLabels[cycle].company) || 'we'; }
+
+        function getRemainingDebt(line) {
+            if (line.status === 'paid' || line.status === 'pending') return 0;
+            if (line.status === 'credit') return Number(line.sale) || 0;
+            if (line.status === 'partial') return Math.max(0, (Number(line.sale) || 0) - (Number(line.paidAmount) || 0));
+            return 0;
+        }
+
+        function getCollectedAmount(line) {
+            if (line.status === 'paid') return Number(line.sale) || 0;
+            if (line.status === 'partial') return Number(line.paidAmount) || 0;
+            return 0;
+        }
+
+        function getCustomerGroupKey(line) {
+            const nameClean = (line.customer || '').trim().toLowerCase();
+            const effectiveContact = getEffectiveContact(line);
+            if (!nameClean) return 'unnamed||' + effectiveContact;
+            return 'named||' + nameClean + '||' + effectiveContact;
+        }
+
+        // Quick Edit Contact Number or Customer Name
+        function quickEditContactNum(lineId) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            const currentCustom = (line.contactNum && line.contactNum !== line.activationNum) ? line.contactNum : '';
+            const input = prompt(`رقم التفعيل هو: ${line.activationNum}\nاكتب رقم التواصل (أو اتركه فارغاً ليكون هو نفس رقم التفعيل):`, currentCustom);
+            if (input === null) return;
+            line.contactNum = input.trim(); // Empty means same as activationNum!
+            saveData();
+            renderApp();
+        }
+
+        function quickSetCustomerName(lineId) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            const newName = prompt(`اكتب اسم العميل صاحب الرقم (${line.activationNum}):`, line.customer || '');
+            if (newName === null) return;
+            line.customer = newName.trim();
+            saveData();
+            renderApp();
+        }
+
+        function toggleLineActivated(lineId) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            line.activated = !line.activated;
+            saveData();
+            renderApp();
+        }
+
+        function activateAndMarkCredit(lineId) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            line.activated = true;
+            line.status = 'credit';
+            line.paidAmount = 0;
+            saveData();
+            renderApp();
+        }
+
+        function cyclePaymentStatus(lineId) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            if (line.status === 'pending') { line.status = 'credit'; line.paidAmount = 0; }
+            else if (line.status === 'credit' || line.status === 'partial') { line.status = 'paid'; line.paidAmount = line.sale; }
+            else { line.status = 'credit'; line.paidAmount = 0; }
+            saveData();
+            renderApp();
+        }
+
+        function markAsPaidQuick(id) {
+            const line = lines.find(l => l.id === id);
+            if (!line) return;
+            line.status = 'paid';
+            line.paidAmount = line.sale;
+            saveData();
+            renderApp();
+        }
+
+        // ==========================================
+        // WHATSAPP ENGINE & ANTI-BAN SMART QUEUE
+        // ==========================================
+        function formatWhatsAppPhone(phone) {
+            let cleaned = (phone || '').replace(/\D/g, '');
+            if (cleaned.startsWith('01') && cleaned.length === 11) return '2' + cleaned;
+            return cleaned;
+        }
+
+        const antiBanGreetings = [
+            'أهلاً بحضرتك 🌹',
+            'مساء الخير يا فندم ✨',
+            'مرحباً بحضرتك 👋',
+            'يا هلا بحضرتك 🙏',
+            'تحياتي لحضرتك 🌟'
+        ];
+
+        function getAntiBanGreeting(customerName, seedIndex = 0) {
+            const name = (customerName || '').trim();
+            const g = antiBanGreetings[seedIndex % antiBanGreetings.length];
+            return name ? `${g.replace('بحضرتك', `يا أ/ ${name}`)}` : g;
+        }
+
+        function getPaymentFooter(includeGroupLink = true) {
+            let parts = [];
+            if (settings.wallet) parts.push(`${settings.wallet}`);
+            if (settings.instapay) parts.push(`${settings.instapay}`);
+            let txt = parts.length > 0 ? `\n💳 التحويل على: (${parts.join(' - ')})` : '';
+            if (includeGroupLink && settings.groupLink) {
+                txt += `\n\n🚩 جروب العروض:\n${settings.groupLink}`;
+            }
+            return txt;
+        }
+
+        function sendWhatsAppSingle(lineId, type) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            const waPhone = formatWhatsAppPhone(getEffectiveContact(line));
+            const greet = getAntiBanGreeting(line.customer, Math.floor(Math.random() * 5));
+            const footer = getPaymentFooter(true);
+            let msg = '';
+
+            if (type === 'activated_unpaid') {
+                line.activated = true;
+                if (line.status === 'pending') line.status = 'credit';
+                saveData();
+                renderApp();
+                msg = `${greet}\nتم بنجاح تفعيل باقة (${line.packageName}) للرقم: *${line.activationNum}* ⚡✅\n\n💰 المبلغ المطلوب تحويله: *${line.sale} ج.م*${footer}\nشكراً لتعاملك معانا 🙏`;
+            } else if (type === 'remind') {
+                msg = `${greet}\nبنفكر حضرتك بموعد تجديد باقة (${line.packageName}) للرقم: *${line.activationNum}*.\nقيمة التجديد: *${line.sale} ج.م*\nتحب نأكد التجديد؟ ✅${footer}`;
+            }
+            window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function sendCustomerGroupWhatsApp(customerKey, type) {
+            const groupLines = getFilteredLines().filter(l => getCustomerGroupKey(l) === customerKey);
+            if (!groupLines.length) return;
+            const first = groupLines[0];
+            const waPhone = formatWhatsAppPhone(getEffectiveContact(first));
+            const greet = getAntiBanGreeting(first.customer, 0);
+            const footer = getPaymentFooter(true);
+
+            let details = '';
+            let totalSale = 0, totalDebt = 0;
+            groupLines.forEach((l, i) => {
+                if (type === 'activated_unpaid' && l.status === 'pending') {
+                    l.activated = true;
+                    l.status = 'credit';
+                }
+                const rem = getRemainingDebt(l);
+                totalSale += Number(l.sale) || 0;
+                totalDebt += rem;
+                details += `${i + 1}️⃣ *${l.activationNum}* ⬅️ (${l.packageName}) - ${l.sale} ج\n`;
+            });
+
+            if (type === 'activated_unpaid') { saveData(); renderApp(); }
+
+            const msg = type === 'remind'
+                ? `${greet}\nبنفكر حضرتك بموعد تجديد الباقات التالية:\n\n${details}\n📊 *إجمالي التجديد:* ${totalSale} ج.م\nتحب نأكد التجديد للشهر الجديد؟ ✅${footer}`
+                : `${greet}\nتم تفعيل الباقات التالية بنجاح وده كشف الحساب للتسوية:\n\n${details}\n💰 *إجمالي المطلوب تحويله:* ${totalDebt || totalSale} ج.م${footer}`;
+
+            window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // --- SMART ANTI-BAN QUEUE MODAL ('renewal' or 'debt') ---
+        function openQueueModal(mode) {
+            queueMode = mode;
+            const filtered = getFilteredLines();
+            const targetLines = mode === 'debt'
+                ? filtered.filter(l => l.status === 'credit' || l.status === 'partial')
+                : filtered;
+
+            if (targetLines.length === 0) {
+                return alert(mode === 'debt'
+                    ? 'لا توجد خطوط عليها فلوس آجل في هذا القسم حالياً! (اضغط تفعيل كـ آجل أولاً)'
+                    : 'لا توجد خطوط في هذا القسم حالياً!');
+            }
+
+            // Group by effective contact number so we don't spam the same person multiple times
+            const map = {};
+            targetLines.forEach(l => {
+                const effContact = getEffectiveContact(l);
+                const key = effContact;
+                if (!map[key]) {
+                    map[key] = {
+                        contactNum: effContact,
+                        customer: (l.customer || '').trim(),
+                        lines: [],
+                        totalSale: 0,
+                        totalDebt: 0,
+                        sent: false
+                    };
+                }
+                map[key].lines.push(l);
+                map[key].totalSale += Number(l.sale) || 0;
+                map[key].totalDebt += getRemainingDebt(l);
+            });
+
+            queueItems = Object.values(map);
+            queueCurrentIndex = 0;
+
+            document.getElementById('queueModalTitle').innerHTML = mode === 'renewal'
+                ? `<i class="fa-brands fa-whatsapp text-blue-400 text-xl"></i> 🔔 طابور تذكير الكل بموعد التجديد وتأكيد التجديد (${queueItems.length} عميل)`
+                : `<i class="fa-brands fa-whatsapp text-rose-400 text-xl"></i> 💰 طابور تذكير الكل بالدفع للآجل (${queueItems.length} عميل)`;
+
+            renderQueueCurrentCard();
+            document.getElementById('queueModal').classList.remove('hidden');
+        }
+
+        function closeQueueModal() {
+            document.getElementById('queueModal').classList.add('hidden');
+        }
+
+        function buildQueueMessage(item, idx) {
+            const hideLink = document.getElementById('queueHideGroupLink').checked;
+            const greet = getAntiBanGreeting(item.customer, idx);
+            const footer = getPaymentFooter(!hideLink);
+
+            let linesTxt = item.lines.map((l, i) =>
+                item.lines.length > 1
+                    ? `${i + 1}️⃣ رقم *${l.activationNum}* (${l.packageName}) - ${l.sale} ج`
+                    : `الرقم: *${l.activationNum}*\nالباقة: *${l.packageName}*\nالقيمة: *${l.sale} ج.م*`
+            ).join('\n');
+
+            if (queueMode === 'renewal') {
+                const askPhrases = [
+                    'تحب نأكد التجديد للشهر الجديد؟ ✅',
+                    'نأكد تفعيل وتجديد الباقة لحضرتك؟ ⚡',
+                    'هل نعتمد تجديد الباقة في الموعد؟ 🙏'
+                ];
+                const ask = askPhrases[idx % askPhrases.length];
+                return `${greet}\nبنفكر حضرتك بموعد تجديد الباقة:\n\n${linesTxt}\n${item.lines.length > 1 ? `\n📊 *الإجمالي:* ${item.totalSale} ج.م\n` : '\n'}${ask}${footer}`;
+            } else {
+                const debtAmount = item.totalDebt || item.totalSale;
+                return `${greet}\nتم تفعيل الباقة بنجاح ✅، وبنفكر حضرتك بتسوية الحساب:\n\n${linesTxt}\n\n💰 *المبلغ المطلوب تحويله:* ${debtAmount} ج.م${footer}\nشكراً لتعاملك معانا 🙏`;
+            }
+        }
+
+        function renderQueueCurrentCard() {
+            const sentCount = queueItems.filter(x => x.sent).length;
+            document.getElementById('queueProgressCounter').innerText = `تم الإرسال لـ ${sentCount} من ${queueItems.length}`;
+
+            const cardEl = document.getElementById('queueActiveCard');
+            const listEl = document.getElementById('queueListContainer');
+
+            if (queueCurrentIndex >= queueItems.length) {
+                cardEl.innerHTML = `
+                    <div class="text-center py-6 space-y-2">
+                        <i class="fa-solid fa-circle-check text-4xl text-emerald-400"></i>
+                        <h3 class="text-base font-extrabold text-white">🎉 تم الانتهاء من إرسال الطابور بالكامل بنجاح وبدون حظر!</h3>
+                        <button onclick="closeQueueModal()" class="mt-2 bg-emerald-600 text-white text-xs font-bold px-6 py-2 rounded-xl">إغلاق النافذة</button>
+                    </div>
+                `;
+            } else {
+                const cur = queueItems[queueCurrentIndex];
+                const msgPreview = buildQueueMessage(cur, queueCurrentIndex);
+                cardEl.innerHTML = `
+                    <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700 pb-2">
+                        <div>
+                            <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">
+                                العميل الدور عليه الآن (${queueCurrentIndex + 1} من ${queueItems.length})
+                            </span>
+                            <span class="font-extrabold text-white text-sm mr-2">${cur.customer || 'بدون اسم'}</span>
+                            <span class="font-mono text-emerald-400 text-xs mr-2">(تواصل: ${cur.contactNum})</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                            ${queueCurrentIndex > 0 ? `<button onclick="queueCurrentIndex--; renderQueueCurrentCard();" class="bg-slate-700 text-xs px-2.5 py-1 rounded-lg">السابق</button>` : ''}
+                            ${queueCurrentIndex < queueItems.length - 1 ? `<button onclick="queueCurrentIndex++; renderQueueCurrentCard();" class="bg-slate-700 text-xs px-2.5 py-1 rounded-lg">تخطي للتالي</button>` : ''}
+                        </div>
+                    </div>
+
+                    <textarea id="queueActiveMsgBox" rows="5" class="w-full bg-slate-950/90 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 leading-relaxed focus:outline-none">${msgPreview}</textarea>
+
+                    <button onclick="sendCurrentAndAdvanceQueue()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> 🚀 إرسال لـ (${cur.contactNum}) والانتقال للتالي تلقائياً
+                    </button>
+                `;
+            }
+
+            listEl.innerHTML = queueItems.map((item, idx) => `
+                <div class="p-2.5 flex justify-between items-center ${idx === queueCurrentIndex ? 'bg-blue-950/50 border-r-4 border-r-blue-400' : 'hover:bg-slate-800/40'}">
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400 font-mono">${idx + 1}.</span>
+                        <span class="font-bold text-white">${item.customer || 'بدون اسم'}</span>
+                        <span class="font-mono text-emerald-400">${item.contactNum}</span>
+                        <span class="text-slate-400">(${item.lines.length} خط - ${item.totalSale} ج)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${item.sent ? `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check-double"></i> تم الإرسال</span>` : `<span class="text-slate-500">في الانتظار</span>`}
+                        <button onclick="queueCurrentIndex=${idx}; renderQueueCurrentCard();" class="bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white px-2.5 py-1 rounded-lg">اختيار</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function sendCurrentAndAdvanceQueue() {
+            if (queueCurrentIndex >= queueItems.length) return;
+            const cur = queueItems[queueCurrentIndex];
+            const customMsg = document.getElementById('queueActiveMsgBox').value;
+            const waPhone = formatWhatsAppPhone(cur.contactNum);
+
+            cur.sent = true;
+            window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(customMsg)}`, '_blank');
+
+            queueCurrentIndex++;
+            renderQueueCurrentCard();
+        }
+
+        function resetQueueSentFlags() {
+            queueItems.forEach(x => x.sent = false);
+            queueCurrentIndex = 0;
+            renderQueueCurrentCard();
+        }
+
+        // ==========================================
+        // RENDERING ENGINE (MOBILE CARDS + DESKTOP TABLE)
+        // ==========================================
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tab) {
+                    btn.classList.add('tab-active');
+                    btn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+                } else {
+                    btn.classList.remove('tab-active');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                }
+            });
+            renderApp();
+        }
+
+        function updateBadges() {
+            document.getElementById('badge_all').innerText = lines.length;
+            ['etisalat_1', 'etisalat_15', 'we_1', 'we_16', 'vodafone_all'].forEach(c => {
+                document.getElementById('badge_' + c).innerText = lines.filter(l => l.cycle === c).length;
+            });
+        }
+
+        function getFilteredLines() {
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const actFilter = document.getElementById('activationFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            return lines.filter(l => {
+                if (currentTab !== 'all' && l.cycle !== currentTab) return false;
+                if (search) {
+                    const hay = `${l.customer || ''} ${l.activationNum} ${getEffectiveContact(l)} ${l.packageName} ${l.notes || ''}`.toLowerCase();
+                    if (!hay.includes(search)) return false;
+                }
+                if (actFilter === 'activated' && !l.activated) return false;
+                if (actFilter === 'not_activated' && l.activated) return false;
+
+                if (statusFilter === 'unpaid_all') return l.status === 'credit' || l.status === 'partial';
+                if (statusFilter === 'activated_unpaid') return l.activated && (l.status === 'credit' || l.status === 'partial');
+                if (statusFilter === 'paid_not_activated') return !l.activated && l.status === 'paid';
+                if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+                return true;
+            });
+        }
+
+        function renderApp() {
+            updateBadges();
+            const filtered = getFilteredLines();
+
+            let totalCost = 0, totalSale = 0, totalProfit = 0, totalDebt = 0, totalCollected = 0, debtCount = 0;
+            let activatedCount = 0, notActivatedCount = 0;
+
+            filtered.forEach(l => {
+                if (l.activated) activatedCount++; else notActivatedCount++;
+                const c = Number(l.cost) || 0, s = Number(l.sale) || 0, debt = getRemainingDebt(l);
+                totalCost += c; totalSale += s; totalProfit += (s - c); totalDebt += debt;
+                totalCollected += getCollectedAmount(l);
+                if (debt > 0) debtCount++;
+            });
+
+            document.getElementById('statTotalLines').innerText = filtered.length;
+            document.getElementById('statActivatedCount').innerText = `⚡ مفعل: ${activatedCount} | ⏳ غير مفعل: ${notActivatedCount}`;
+            document.getElementById('statTotalCost').innerText = totalCost.toLocaleString();
+            document.getElementById('statTotalSale').innerText = totalSale.toLocaleString();
+            document.getElementById('statTotalProfit').innerText = totalProfit.toLocaleString();
+            document.getElementById('statTotalDebt').innerText = totalDebt.toLocaleString();
+            document.getElementById('statCollected').innerText = totalCollected.toLocaleString();
+            document.getElementById('statDebtCount').innerText = `(${debtCount} خط)`;
+
+            const mobileContainer = document.getElementById('mobileCardsView');
+            const tbody = document.getElementById('linesTableBody');
+            const emptyState = document.getElementById('emptyState');
+
+            mobileContainer.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            const groupsMap = {};
+            filtered.forEach(l => {
+                const key = getCustomerGroupKey(l);
+                const effContact = getEffectiveContact(l);
+                if (!groupsMap[key]) {
+                    groupsMap[key] = {
+                        key,
+                        customer: (l.customer || '').trim(),
+                        contactNum: effContact,
+                        isCustomContact: Boolean(l.contactNum && l.contactNum.trim() && l.contactNum.trim() !== l.activationNum.trim()),
+                        notes: l.notes,
+                        firstLineId: l.id,
+                        items: [],
+                        totalCost: 0,
+                        totalSale: 0,
+                        totalProfit: 0,
+                        totalDebt: 0
+                    };
+                }
+                groupsMap[key].items.push(l);
+                const c = Number(l.cost) || 0, s = Number(l.sale) || 0;
+                groupsMap[key].totalCost += c;
+                groupsMap[key].totalSale += s;
+                groupsMap[key].totalProfit += (s - c);
+                groupsMap[key].totalDebt += getRemainingDebt(l);
+            });
+
+            const groupsList = Object.values(groupsMap);
+            renderMobileCards(mobileContainer, groupsList);
+            renderDesktopRows(tbody, groupsList);
+        }
+
+        function renderMobileCards(container, groupsList) {
+            groupsList.forEach(group => {
+                const hasName = group.customer.length > 0;
+                const card = document.createElement('div');
+                card.className = 'glass-card p-3.5 rounded-2xl border border-slate-700/90 space-y-3 shadow-lg';
+
+                const itemsHtml = group.items.map(item => {
+                    const cInfo = cycleLabels[item.cycle] || cycleLabels['we_1'];
+                    const profit = (Number(item.sale) || 0) - (Number(item.cost) || 0);
+                    const debt = getRemainingDebt(item);
+                    const effContact = getEffectiveContact(item);
+                    const hasDiffContact = effContact !== item.activationNum;
+
+                    const actBtn = item.activated
+                        ? `<button onclick="toggleLineActivated('${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⚡ مفعل</button>`
+                        : `<button onclick="toggleLineActivated('${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700">⏳ لم يفعل</button>`;
+
+                    let payBtn = '';
+                    if (item.status === 'paid') payBtn = `<button onclick="cyclePaymentStatus('${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">✅ خالص</button>`;
+                    else if (item.status === 'credit') payBtn = `<button onclick="cyclePaymentStatus('${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse">🚨 آجل (${debt}ج)</button>`;
+                    else payBtn = `<button onclick="activateAndMarkCredit('${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">⚡ فعل كـ آجل</button>`;
+
+                    return `
+                        <div class="bg-slate-900/95 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] text-slate-400">تفعيل:</span>
+                                    <span class="font-mono font-extrabold text-sm text-white">${item.activationNum}</span>
+                                    <button onclick="copyText('${item.activationNum}')" class="text-slate-400 hover:text-blue-400 text-xs"><i class="fa-regular fa-copy"></i></button>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${cInfo.badge}">${cInfo.name}</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="editSingleLine('${item.id}')" class="text-slate-400 hover:text-blue-400 text-xs px-1"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteLine('${item.id}')" class="text-slate-400 hover:text-rose-400 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[11px] bg-slate-950/60 px-2 py-1 rounded-lg">
+                                <span class="text-emerald-400 font-mono">
+                                    <i class="fa-brands fa-whatsapp"></i> تواصل: ${effContact}
+                                    ${!hasDiffContact ? '<span class="text-[10px] text-slate-500">(نفس الرقم)</span>' : '<span class="text-[10px] text-amber-300">(رقم مختلف)</span>'}
+                                </span>
+                                <button onclick="quickEditContactNum('${item.id}')" class="text-blue-400 underline text-[10px]">تغيير رقم التواصل</button>
+                            </div>
+
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">${item.packageName}</span>
+                                <div>
+                                    <span class="text-slate-400">تكلفة: <b>${item.cost}</b></span> |
+                                    <span class="text-indigo-300">بيع: <b class="text-white">${item.sale}</b></span> |
+                                    <span class="text-emerald-400 font-bold">+${profit}ج</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-800/80">
+                                <div class="flex items-center gap-1">
+                                    ${actBtn}
+                                    ${payBtn}
+                                    ${item.status !== 'paid' ? `<button onclick="markAsPaidQuick('${item.id}')" class="px-2 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">✅ تحصيل</button>` : ''}
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="sendWhatsAppSingle('${item.id}', 'remind')" class="bg-blue-600/20 text-blue-300 px-2 py-1 rounded-lg text-[11px] font-bold border border-blue-500/30">🔔 تجديد</button>
+                                    <button onclick="sendWhatsAppSingle('${item.id}', 'activated_unpaid')" class="bg-rose-600/20 text-rose-300 px-2 py-1 rounded-lg text-[11px] font-bold border border-rose-500/30">💰 مطالبة</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-700/80 pb-2">
+                        <div>
+                            ${hasName
+                                ? `<div class="font-extrabold text-sm text-white flex items-center gap-1.5"><i class="fa-solid fa-user text-blue-400"></i> ${group.customer} <button onclick="quickSetCustomerName('${group.firstLineId}')" class="text-xs text-slate-400"><i class="fa-solid fa-pen"></i></button></div>`
+                                : `<button onclick="quickSetCustomerName('${group.firstLineId}')" class="text-xs bg-slate-800 text-slate-300 border border-slate-600 px-2.5 py-1 rounded-lg font-bold">+ إضافة اسم للعميل</button>`
+                            }
+                        </div>
+                        <button onclick="openAddAnotherLineForCustomer('${group.firstLineId}')" class="bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold px-2.5 py-1 rounded-lg">+ رقم إضافي</button>
+                    </div>
+                    <div class="space-y-2">${itemsHtml}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderDesktopRows(tbody, groupsList) {
+            groupsList.forEach(group => {
+                const hasName = group.customer.length > 0;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/30 transition align-top';
+
+                const numbersHtml = group.items.map((item, idx) => {
+                    const cInfo = cycleLabels[item.cycle] || cycleLabels['we_1'];
+                    const itemProfit = (Number(item.sale) || 0) - (Number(item.cost) || 0);
+                    const itemDebt = getRemainingDebt(item);
+                    const effContact = getEffectiveContact(item);
+                    const isSameContact = effContact === item.activationNum;
+
+                    const actBtn = item.activated
+                        ? `<button onclick="toggleLineActivated('${item.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⚡ تم التفعيل</button>`
+                        : `<button onclick="toggleLineActivated('${item.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700">⏳ لم تفعل</button>`;
+
+                    let payBadge = '';
+                    if (item.status === 'paid') payBadge = `<button onclick="cyclePaymentStatus('${item.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✅ تم الدفع</button>`;
+                    else if (item.status === 'credit') payBadge = `<button onclick="cyclePaymentStatus('${item.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse">🚨 آجل (${itemDebt} ج)</button>`;
+                    else payBadge = `<button onclick="activateAndMarkCredit('${item.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/20 hover:bg-rose-600 text-blue-300 hover:text-white border border-blue-500/30 transition">⚡ تفعيل كـ آجل</button>`;
+
+                    return `
+                        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-700/80">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[11px] font-bold flex items-center justify-center">${idx + 1}</span>
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[10px] text-slate-400">تفعيل:</span>
+                                        <span class="font-mono font-extrabold text-sm text-white">${item.activationNum}</span>
+                                        <button onclick="copyText('${item.activationNum}')" class="text-slate-500 hover:text-blue-400 text-xs"><i class="fa-regular fa-copy"></i></button>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${cInfo.badge}">${cInfo.name}</span>
+                                        <span class="text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">${item.packageName}</span>
+                                    </div>
+                                    <div class="text-[11px] text-emerald-400 font-mono mt-0.5 flex items-center gap-2">
+                                        <span><i class="fa-brands fa-whatsapp"></i> تواصل: <b>${effContact}</b> ${isSameContact ? '<span class="text-slate-500">(نفس الرقم)</span>' : '<span class="text-amber-300">(رقم تواصل مخصص)</span>'}</span>
+                                        <button onclick="quickEditContactNum('${item.id}')" class="text-blue-400 hover:underline text-[10px]"><i class="fa-solid fa-pen"></i> تغيير التواصل</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <div class="text-xs">
+                                    <span class="text-slate-400">تكلفة: <b class="text-slate-200">${item.cost}</b></span> |
+                                    <span class="text-indigo-300">بيع: <b class="text-white">${item.sale}</b></span> |
+                                    <span class="text-emerald-400 font-bold">+${itemProfit} ج</span>
+                                </div>
+
+                                <div class="flex items-center gap-1.5">
+                                    ${actBtn}
+                                    ${payBadge}
+                                    ${item.status !== 'paid' ? `<button onclick="markAsPaidQuick('${item.id}')" class="px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px] font-bold transition">✅ تحصيل</button>` : ''}
+                                    <button onclick="sendWhatsAppSingle('${item.id}', 'remind')" class="px-2 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white text-[11px] font-bold border border-blue-500/30 transition">🔔 تجديد</button>
+                                    <button onclick="sendWhatsAppSingle('${item.id}', 'activated_unpaid')" class="px-2 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-[11px] font-bold border border-rose-500/30 transition">💰 مطالبة</button>
+                                    <button onclick="editSingleLine('${item.id}')" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white text-xs flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteLine('${item.id}')" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white text-xs flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                tr.innerHTML = `
+                    <td class="py-4 px-4">
+                        ${hasName
+                            ? `<div class="font-extrabold text-base text-white flex items-center gap-2">
+                                <i class="fa-solid fa-user-check text-blue-400"></i> ${group.customer}
+                                <button onclick="quickSetCustomerName('${group.firstLineId}')" class="text-slate-500 hover:text-blue-400 text-xs"><i class="fa-solid fa-pen"></i></button>
+                               </div>`
+                            : `<button onclick="quickSetCustomerName('${group.firstLineId}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs font-bold px-3 py-1 rounded-xl flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-plus text-amber-400"></i> + إضافة اسم للرقم
+                               </button>`
+                        }
+                        <div class="font-mono text-xs text-emerald-400 mt-1.5 flex items-center gap-1.5">
+                            <i class="fa-brands fa-whatsapp"></i> تواصل: ${group.contactNum}
+                            <button onclick="quickEditContactNum('${group.firstLineId}')" class="text-blue-400 hover:underline text-[10px]">(تعديل)</button>
+                        </div>
+                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                            ${group.items.length > 1 ? `<span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">معاه ${group.items.length} أرقام</span>` : ''}
+                            <button onclick="openAddAnotherLineForCustomer('${group.firstLineId}')" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-lg transition">+ إضافة رقم</button>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 space-y-2">${numbersHtml}</td>
+                    <td class="py-4 px-3">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700/80 space-y-1 text-xs">
+                            <div class="flex justify-between text-slate-400"><span>التكلفة:</span> <b class="text-slate-200">${group.totalCost} ج</b></div>
+                            <div class="flex justify-between text-indigo-300"><span>البيع:</span> <b class="text-white">${group.totalSale} ج</b></div>
+                            <div class="flex justify-between text-emerald-400 border-t border-slate-800 pt-1"><span>ربحك:</span> <b class="font-extrabold">+${group.totalProfit} ج</b></div>
+                            ${group.totalDebt > 0 ? `<div class="flex justify-between text-rose-400 border-t border-slate-800 pt-1"><span>الآجل:</span> <b class="font-extrabold">${group.totalDebt} ج</b></div>` : ''}
+                        </div>
+                    </td>
+                    <td class="py-4 px-3 text-center">
+                        <div class="flex flex-col gap-1.5">
+                            <button onclick="sendCustomerGroupWhatsApp('${group.key}', 'remind')" class="w-full bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white py-1.5 px-3 rounded-xl text-xs font-bold border border-blue-500/30 transition flex items-center justify-center gap-1.5">
+                                <i class="fa-brands fa-whatsapp"></i> تذكير وتأكيد التجديد
+                            </button>
+                            <button onclick="sendCustomerGroupWhatsApp('${group.key}', 'activated_unpaid')" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white py-1.5 px-3 rounded-xl text-xs font-bold border border-rose-500/30 transition flex items-center justify-center gap-1.5">
+                                <i class="fa-brands fa-whatsapp"></i> تم التفعيل + تذكير بالدفع
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // SMART BULK IMPORTER (SEPARATE ACTIVATION & OPTIONAL CONTACT)
+        // ==========================================
+        function openBulkModal() {
+            if (currentTab !== 'all') document.getElementById('bulkCycle').value = currentTab;
+            document.getElementById('bulkRawText').value = '';
+            bulkParsedItems = [];
+            renderBulkPreview();
+            document.getElementById('bulkModal').classList.remove('hidden');
+        }
+        function closeBulkModal() { document.getElementById('bulkModal').classList.add('hidden'); }
+
+        function findMatchingPackageForCompany(company, textHint) {
+            const compPkgs = companyPackages.filter(p => p.company === company);
+            const numMatch = (textHint || '').match(/(\d+)/);
+            if (numMatch) {
+                const targetNum = numMatch[1];
+                const exact = compPkgs.find(p => (p.giga.match(/(\d+)/) || [])[1] === targetNum);
+                if (exact) return { packageName: formatPkgFullTitle(exact), cost: exact.cost, sale: exact.sale };
+                return { packageName: `باقة ${targetNum} جيجا`, cost: 0, sale: 0 };
+            }
+            const def = compPkgs[0] || { giga: '10GB', mins: '', cost: 160, sale: 190 };
+            return { packageName: formatPkgFullTitle(def), cost: def.cost, sale: def.sale };
+        }
+
+        function parseBulkText() {
+            const raw = document.getElementById('bulkRawText').value;
+            let cycleSel = document.getElementById('bulkCycle');
+
+            const firstLines = raw.split(/\r?\n/).slice(0, 3).join(' ').toLowerCase();
+            if (firstLines.includes('وي') || firstLines.includes('we')) {
+                if (firstLines.includes('16') || firstLines.includes('١٦')) cycleSel.value = 'we_16';
+                else if (firstLines.includes('1') || firstLines.includes('١')) cycleSel.value = 'we_1';
+            } else if (firstLines.includes('اتصالات')) {
+                if (firstLines.includes('15') || firstLines.includes('١٥')) cycleSel.value = 'etisalat_15';
+                else if (firstLines.includes('1') || firstLines.includes('١')) cycleSel.value = 'etisalat_1';
+            } else if (firstLines.includes('فودافون')) cycleSel.value = 'vodafone_all';
+
+            const cycle = cycleSel.value;
+            const company = getCompanyFromCycle(cycle);
+            const isActivated = document.getElementById('bulkActivated').value === 'true';
+            const status = document.getElementById('bulkStatus').value;
+
+            const normalizedRaw = raw.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+            const rawLines = normalizedRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+            bulkParsedItems = [];
+            let pendingCustomerName = '';
+
+            for (let i = 0; i < rawLines.length; i++) {
+                const lineStr = rawLines[i];
+                if (!/01[0125]\d{8}/.test(lineStr) && /(فاتورة|وي يوم|اتصالات يوم|باقات\s*$|^وي\s+\d)/i.test(lineStr)) continue;
+
+                const phones = lineStr.match(/01[0125]\d{8}/g) || [];
+                if (phones.length > 0) {
+                    const actPhone = phones[0];
+                    // Leave contactNum EMPTY if not explicitly provided as a second number!
+                    const customContactPhone = phones[1] || '';
+
+                    let pkgHint = '';
+                    let remainderSameLine = lineStr.replace(/01[0125]\d{8}/g, '').trim();
+
+                    if (/(باقة|جيجا|gb|فليكس|\d+\s*جيجا)/i.test(remainderSameLine)) {
+                        pkgHint = remainderSameLine;
+                        remainderSameLine = '';
+                    } else if (i + 1 < rawLines.length && !/01[0125]\d{8}/.test(rawLines[i + 1]) && /(باقة|جيجا|gb|فليكس|\d+)/i.test(rawLines[i + 1])) {
+                        pkgHint = rawLines[i + 1];
+                        i++;
+                    }
+
+                    let custName = pendingCustomerName;
+                    if (!custName && remainderSameLine) {
+                        let cleaned = remainderSameLine.replace(/[-_:،,/|0-9]/g, ' ').trim();
+                        if (cleaned.length > 1 && !/(باقة|جيجا|وي|اتصالات|فودافون|يوم|فاتورة)/i.test(cleaned)) custName = cleaned;
+                    }
+
+                    const matchedPkg = findMatchingPackageForCompany(company, pkgHint);
+                    bulkParsedItems.push({
+                        customer: custName || '',
+                        activationNum: actPhone,
+                        contactNum: customContactPhone, // Empty string means same as activationNum
+                        cycle,
+                        renewalDay: cycleLabels[cycle].defaultDay,
+                        packageName: matchedPkg.packageName,
+                        cost: matchedPkg.cost,
+                        sale: matchedPkg.sale,
+                        activated: isActivated,
+                        status: status
+                    });
+                } else {
+                    if (!/(باقة|جيجا|gb|فليكس|فاتورة|يوم)/i.test(lineStr) && lineStr.length > 2) pendingCustomerName = lineStr;
+                }
+            }
+            renderBulkPreview();
+        }
+
+        function renderBulkPreview() {
+            document.getElementById('bulkCountBadge').innerText = bulkParsedItems.length;
+            const tbody = document.getElementById('bulkPreviewBody');
+            if (!bulkParsedItems.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">الصق النوت في المربع الجانبي لتظهر الأرقام هنا فوراً...</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = bulkParsedItems.map((item, idx) => `
+                <tr class="hover:bg-slate-800/60">
+                    <td class="p-2">
+                        <input type="tel" value="${item.activationNum}" onchange="bulkParsedItems[${idx}].activationNum=this.value.trim()" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 font-mono font-bold text-white w-28">
+                    </td>
+                    <td class="p-2">
+                        <input type="tel" value="${item.contactNum}" placeholder="نفس رقم التفعيل" onchange="bulkParsedItems[${idx}].contactNum=this.value.trim()" class="bg-slate-800 border border-emerald-500/40 rounded px-2 py-1 font-mono text-emerald-300 placeholder-slate-500 w-32">
+                    </td>
+                    <td class="p-2">
+                        <input type="text" value="${item.packageName}" onchange="bulkParsedItems[${idx}].packageName=this.value" class="bg-slate-800 border border-amber-500/40 rounded px-2 py-1 text-amber-300 font-bold w-32">
+                    </td>
+                    <td class="p-2">
+                        <input type="number" value="${item.cost}" onchange="bulkParsedItems[${idx}].cost=Number(this.value)" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white w-16">
+                    </td>
+                    <td class="p-2">
+                        <input type="number" value="${item.sale}" onchange="bulkParsedItems[${idx}].sale=Number(this.value)" class="bg-slate-800 border border-emerald-500/40 rounded px-2 py-1 text-emerald-300 font-bold w-16">
+                    </td>
+                    <td class="p-2">
+                        <input type="text" value="${item.customer}" placeholder="بدون اسم" onchange="bulkParsedItems[${idx}].customer=this.value" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 w-28">
+                    </td>
+                    <td class="p-2 text-center">
+                        <button onclick="bulkParsedItems.splice(${idx},1); renderBulkPreview();" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-xmark"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function confirmBulkImport() {
+            if (!bulkParsedItems.length) return alert('الصق الأرقام من النوت باد أولاً!');
+            const targetCycle = document.getElementById('bulkCycle').value;
+            bulkParsedItems.forEach((item, idx) => {
+                lines.push({
+                    id: Date.now() + '_b_' + idx,
+                    ...item,
+                    // If contactNum was left empty, it automatically falls back to activationNum
+                    contactNum: item.contactNum.trim() || item.activationNum.trim(),
+                    paidAmount: item.status === 'paid' ? item.sale : 0,
+                    notes: ''
+                });
+            });
+            saveData();
+            closeBulkModal();
+            switchTab(targetCycle);
+        }
+
+        // ==========================================
+        // ADD / EDIT MODAL FUNCTIONS (WITH OPTIONAL PER-ROW CONTACT NUMBER)
+        // ==========================================
+        function getCompanyPackagesOptionsHtml(company, selectedPkgName) {
+            const list = companyPackages.filter(p => p.company === company);
+            let html = `<option value="">-- اختر باقة (${company === 'etisalat' ? 'اتصالات' : (company === 'we' ? 'WE' : 'فودافون')}) --</option>`;
+            list.forEach(p => {
+                const title = formatPkgFullTitle(p);
+                const isSelected = selectedPkgName && selectedPkgName.includes(p.giga);
+                html += `<option value="${p.id}" ${isSelected ? 'selected' : ''}>${title} ⬅️ (تكلفة: ${p.cost} ج | بيع: ${p.sale} ج)</option>`;
+            });
+            return html;
+        }
+
+        function addLineRowInModal(prefill = {}) {
+            const container = document.getElementById('modalLinesContainer');
+            const rowIndex = container.children.length + 1;
+            const defaultCycle = prefill.cycle || (currentTab !== 'all' ? currentTab : 'we_1');
+            const company = getCompanyFromCycle(defaultCycle);
+            const compPkgs = companyPackages.filter(p => p.company === company);
+            const firstPkg = compPkgs[0] || { giga: '', mins: '', cost: 0, sale: 0 };
+
+            const pkgNameVal = prefill.packageName || formatPkgFullTitle(firstPkg);
+            const costVal = prefill.cost !== undefined ? prefill.cost : firstPkg.cost;
+            const saleVal = prefill.sale !== undefined ? prefill.sale : firstPkg.sale;
+            const statusVal = prefill.status || 'pending';
+            const activatedVal = prefill.activated ? 'true' : 'false';
+            const dayVal = prefill.renewalDay || (cycleLabels[defaultCycle] ? cycleLabels[defaultCycle].defaultDay : 1);
+
+            const row = document.createElement('div');
+            row.className = 'line-entry-row bg-slate-900/95 p-3.5 rounded-2xl border border-slate-700 space-y-3';
+            row.innerHTML = `
+                <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                    <span class="text-xs font-extrabold text-emerald-400">📱 الخط رقم (<span class="row-num">${rowIndex}</span>)</span>
+                    ${rowIndex > 1 ? `<button type="button" onclick="this.closest('.line-entry-row').remove(); updateModalSummary();" class="text-xs text-rose-400 font-bold"><i class="fa-solid fa-trash"></i> حذف</button>` : ''}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                    <div class="sm:col-span-3">
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">1. رقم التفعيل *</label>
+                        <input type="tel" required value="${prefill.activationNum || ''}" placeholder="01xxxxxxxxx" class="row-activation w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-mono">
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">2. الشركة والفاتورة *</label>
+                        <select onchange="onRowCycleChange(this)" class="row-cycle w-full bg-slate-800 border border-slate-600 rounded-xl px-2 py-2 text-xs text-white font-bold">
+                            <option value="we_1" ${defaultCycle === 'we_1' ? 'selected' : ''}>🟣 وي WE - فاتورة 1</option>
+                            <option value="we_16" ${defaultCycle === 'we_16' ? 'selected' : ''}>🟣 وي WE - فاتورة 16</option>
+                            <option value="etisalat_1" ${defaultCycle === 'etisalat_1' ? 'selected' : ''}>🟢 اتصالات - فاتورة 1</option>
+                            <option value="etisalat_15" ${defaultCycle === 'etisalat_15' ? 'selected' : ''}>🟢 اتصالات - فاتورة 15</option>
+                            <option value="vodafone_all" ${defaultCycle === 'vodafone_all' ? 'selected' : ''}>🔴 فودافون - طول الشهر</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-6">
+                        <label class="block text-[11px] font-bold text-amber-300 mb-1">3. اختر باقة الشركة *</label>
+                        <select onchange="onRowPackageSelect(this)" class="row-pkg-select w-full bg-slate-800 border border-amber-500/50 rounded-xl px-2.5 py-2 text-xs text-amber-300 font-bold">
+                            ${getCompanyPackagesOptionsHtml(company, pkgNameVal)}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end pt-1">
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-[10px] text-slate-400 mb-1">اسم الباقة</label>
+                        <input type="text" value="${pkgNameVal}" class="row-pkg-name w-full bg-slate-800 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-200 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">التكلفة</label>
+                        <input type="number" step="0.5" value="${costVal}" class="row-cost w-full bg-slate-800 border border-slate-600 rounded-xl px-2 py-1.5 text-xs text-white font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-emerald-400 mb-1">البيع</label>
+                        <input type="number" step="0.5" value="${saleVal}" class="row-sale w-full bg-slate-800 border border-emerald-500/50 rounded-xl px-2 py-1.5 text-xs text-white font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-amber-300 mb-1">حالة التفعيل</label>
+                        <select class="row-activated w-full bg-slate-800 border border-slate-600 rounded-xl px-2 py-1.5 text-xs text-white">
+                            <option value="false" ${activatedVal === 'false' ? 'selected' : ''}>⏳ لم تفعل</option>
+                            <option value="true" ${activatedVal === 'true' ? 'selected' : ''}>⚡ تم التفعيل</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-300 mb-1">حالة الدفع</label>
+                        <select class="row-status w-full bg-slate-800 border border-slate-600 rounded-xl px-2 py-1.5 text-xs text-white">
+                            <option value="pending" ${statusVal === 'pending' ? 'selected' : ''}>🔔 انتظار</option>
+                            <option value="credit" ${statusVal === 'credit' ? 'selected' : ''}>🚨 آجل (لم يدفع)</option>
+                            <option value="paid" ${statusVal === 'paid' ? 'selected' : ''}>✅ تم الدفع</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-1">يوم التجديد</label>
+                        <input type="number" min="1" max="31" value="${dayVal}" class="row-day w-full bg-slate-800 border border-slate-600 rounded-xl px-2 py-1.5 text-xs text-white">
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+            if (!prefill.packageName && compPkgs.length > 0) row.querySelector('.row-pkg-select').value = compPkgs[0].id;
+            updateModalSummary();
+        }
+
+        function onRowCycleChange(cycleSelectEl) {
+            const row = cycleSelectEl.closest('.line-entry-row');
+            const cycle = cycleSelectEl.value;
+            const company = getCompanyFromCycle(cycle);
+            const pkgSelect = row.querySelector('.row-pkg-select');
+            row.querySelector('.row-day').value = cycleLabels[cycle].defaultDay;
+            pkgSelect.innerHTML = getCompanyPackagesOptionsHtml(company, '');
+            const compPkgs = companyPackages.filter(p => p.company === company);
+            if (compPkgs.length > 0) {
+                pkgSelect.value = compPkgs[0].id;
+                onRowPackageSelect(pkgSelect);
+            }
+        }
+
+        function onRowPackageSelect(pkgSelectEl) {
+            const pkg = companyPackages.find(p => p.id === pkgSelectEl.value);
+            if (!pkg) return;
+            const row = pkgSelectEl.closest('.line-entry-row');
+            row.querySelector('.row-pkg-name').value = formatPkgFullTitle(pkg);
+            row.querySelector('.row-cost').value = pkg.cost;
+            row.querySelector('.row-sale').value = pkg.sale;
+        }
+
+        function updateModalSummary() {
+            const rows = document.querySelectorAll('#modalLinesContainer .line-entry-row');
+            rows.forEach((r, idx) => r.querySelector('.row-num').innerText = idx + 1);
+            document.getElementById('modalTotalSummary').innerText = `إجمالي الخطوط: ${rows.length}`;
+        }
+
+        function openLineModal() {
+            document.getElementById('lineForm').reset();
+            document.getElementById('editingLineId').value = '';
+            document.getElementById('addMoreLineBtn').classList.remove('hidden');
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-user-plus text-emerald-400"></i> إضافة عميل / أرقام`;
+            document.getElementById('modalLinesContainer').innerHTML = '';
+            addLineRowInModal();
+            document.getElementById('lineModal').classList.remove('hidden');
+        }
+
+        function openAddAnotherLineForCustomer(lineId) {
+            const existing = lines.find(l => l.id === lineId);
+            if (!existing) return;
+            document.getElementById('lineForm').reset();
+            document.getElementById('editingLineId').value = '';
+            document.getElementById('addMoreLineBtn').classList.remove('hidden');
+            document.getElementById('custName').value = existing.customer || '';
+            document.getElementById('custContact').value = getEffectiveContact(existing);
+            document.getElementById('custNotes').value = existing.notes || '';
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-plus-circle text-emerald-400"></i> إضافة رقم إضافي لنفس العميل`;
+            document.getElementById('modalLinesContainer').innerHTML = '';
+            addLineRowInModal({ cycle: existing.cycle });
+            document.getElementById('lineModal').classList.remove('hidden');
+        }
+
+        function editSingleLine(lineId) {
+            const line = lines.find(l => l.id === lineId);
+            if (!line) return;
+            document.getElementById('lineForm').reset();
+            document.getElementById('editingLineId').value = line.id;
+            document.getElementById('addMoreLineBtn').classList.add('hidden');
+            document.getElementById('custName').value = line.customer || '';
+            // Show empty in contact box if it's identical to activationNum, so user knows it's auto-linked
+            document.getElementById('custContact').value = (line.contactNum && line.contactNum !== line.activationNum) ? line.contactNum : '';
+            document.getElementById('custNotes').value = line.notes || '';
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-pen text-blue-400"></i> تعديل الرقم: ${line.activationNum}`;
+            document.getElementById('modalLinesContainer').innerHTML = '';
+            addLineRowInModal({
+                activationNum: line.activationNum,
+                cycle: line.cycle,
+                renewalDay: line.renewalDay,
+                packageName: line.packageName,
+                cost: line.cost,
+                sale: line.sale,
+                activated: line.activated,
+                status: line.status
+            });
+            document.getElementById('lineModal').classList.remove('hidden');
+        }
+
+        function closeLineModal() { document.getElementById('lineModal').classList.add('hidden'); }
+
+        function saveCustomerLines(e) {
+            e.preventDefault();
+            const editingId = document.getElementById('editingLineId').value;
+            const customer = document.getElementById('custName').value.trim();
+            const sharedContact = document.getElementById('custContact').value.trim();
+            const notes = document.getElementById('custNotes').value.trim();
+            const rows = document.querySelectorAll('#modalLinesContainer .line-entry-row');
+
+            const newEntries = [];
+            rows.forEach((row, idx) => {
+                const actNum = row.querySelector('.row-activation').value.trim();
+                const cycle = row.querySelector('.row-cycle').value;
+                const pkgName = row.querySelector('.row-pkg-name').value.trim();
+                const cost = Number(row.querySelector('.row-cost').value) || 0;
+                const sale = Number(row.querySelector('.row-sale').value) || 0;
+                const activated = row.querySelector('.row-activated').value === 'true';
+                const status = row.querySelector('.row-status').value;
+                const renewalDay = Number(row.querySelector('.row-day').value) || 1;
+
+                // If sharedContact is left empty, automatically use actNum (or first row's actNum if multiple rows for same customer)
+                const firstAct = rows[0].querySelector('.row-activation').value.trim();
+                const finalContact = sharedContact || (rows.length > 1 ? firstAct : actNum);
+
+                newEntries.push({
+                    id: editingId || (Date.now() + '_' + idx),
+                    cycle,
+                    renewalDay,
+                    customer,
+                    activationNum: actNum,
+                    contactNum: finalContact,
+                    packageName: pkgName,
+                    cost,
+                    sale,
+                    activated,
+                    status,
+                    paidAmount: status === 'paid' ? sale : 0,
+                    notes
+                });
+            });
+
+            if (editingId) {
+                const i = lines.findIndex(l => l.id === editingId);
+                if (i > -1) lines[i] = newEntries[0];
+            } else {
+                lines.push(...newEntries);
+            }
+
+            saveData();
+            closeLineModal();
+            renderApp();
+        }
+
+        // --- Packages & Settings Modal Functions ---
+        function openPackagesModal() {
+            document.getElementById('settingWallet').value = settings.wallet || '';
+            document.getElementById('settingInstapay').value = settings.instapay || '';
+            document.getElementById('settingGroupLink').value = settings.groupLink || '';
+            filterPkgModalCompany(currentPkgModalCo);
+            document.getElementById('packagesModal').classList.remove('hidden');
+        }
+        function closePackagesModal() { document.getElementById('packagesModal').classList.add('hidden'); }
+
+        function filterPkgModalCompany(company) {
+            currentPkgModalCo = company;
+            document.getElementById('newPkgCompany').value = company;
+            ['we', 'etisalat', 'vodafone'].forEach(c => {
+                const btn = document.getElementById('pkgTab_' + c);
+                btn.className = c === company
+                    ? 'pkg-co-tab bg-blue-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow'
+                    : 'pkg-co-tab bg-slate-800 text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold';
+            });
+
+            const tbody = document.getElementById('pkgModalTableBody');
+            const list = companyPackages.filter(p => p.company === company);
+            tbody.innerHTML = list.map(p => `
+                <tr class="hover:bg-slate-800/50">
+                    <td class="py-2 px-3 font-bold text-amber-300">${formatPkgFullTitle(p)}</td>
+                    <td class="py-2 px-2"><input type="number" value="${p.cost}" onchange="updatePkgPrice('${p.id}', 'cost', this.value)" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white font-bold w-20"></td>
+                    <td class="py-2 px-2"><input type="number" value="${p.sale}" onchange="updatePkgPrice('${p.id}', 'sale', this.value)" class="bg-slate-800 border border-emerald-500/50 rounded px-2 py-1 text-white font-bold w-20"></td>
+                    <td class="py-2 px-2 font-extrabold text-emerald-400">+${p.sale - p.cost}ج</td>
+                    <td class="py-2 px-2 text-center"><button onclick="deleteCompanyPkg('${p.id}')" class="text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        function addNewCompanyPackage() {
+            const company = document.getElementById('newPkgCompany').value;
+            const giga = document.getElementById('newPkgGiga').value.trim();
+            const mins = document.getElementById('newPkgMins').value.trim();
+            const cost = Number(document.getElementById('newPkgCost').value) || 0;
+            const sale = Number(document.getElementById('newPkgSale').value) || 0;
+            if (!giga || !sale) return alert('اكتب الجيجات وسعر البيع!');
+            companyPackages.push({ id: 'pkg_' + Date.now(), company, giga, mins, cost, sale });
+            document.getElementById('newPkgGiga').value = '';
+            document.getElementById('newPkgMins').value = '';
+            document.getElementById('newPkgCost').value = '';
+            document.getElementById('newPkgSale').value = '';
+            saveData();
+            filterPkgModalCompany(company);
+        }
+
+        function updatePkgPrice(id, field, val) {
+            const pkg = companyPackages.find(p => p.id === id);
+            if (!pkg) return;
+            pkg[field] = Number(val) || 0;
+            saveData();
+            filterPkgModalCompany(currentPkgModalCo);
+        }
+
+        function deleteCompanyPkg(id) {
+            companyPackages = companyPackages.filter(p => p.id !== id);
+            saveData();
+            filterPkgModalCompany(currentPkgModalCo);
+        }
+
+        function savePaymentSettings() {
+            settings.wallet = document.getElementById('settingWallet').value.trim();
+            settings.instapay = document.getElementById('settingInstapay').value.trim();
+            settings.groupLink = document.getElementById('settingGroupLink').value.trim();
+            saveData();
+            alert('تم حفظ الإعدادات ومزامنتها!');
+        }
+
+        // --- Offers & Rules Modal ---
+        function openRulesModal() { generateOfferPost('all'); document.getElementById('rulesModal').classList.remove('hidden'); }
+        function closeRulesModal() { document.getElementById('rulesModal').classList.add('hidden'); }
+
+        function generateOfferPost(type) {
+            const wePkgs = companyPackages.filter(p => p.company === 'we').map(p => `${formatPkgFullTitle(p)} > ${p.sale}🟣`).join('\n');
+            const etPkgs = companyPackages.filter(p => p.company === 'etisalat').map(p => `${formatPkgFullTitle(p)} > ${p.sale}🟢`).join('\n');
+            const vfPkgs = companyPackages.filter(p => p.company === 'vodafone').map(p => `${formatPkgFullTitle(p)} »»» ${p.sale}🔴`).join('\n');
+
+            const weBlock = `أسعار باقات WE 🟣\n${wePkgs}\nالباقة مدتها 29 يوم\nشروط we فقط:\n⛔️ مينفعش الباقة لخطوط وي جولد او تكافل وكرامة\nعادي لو الخط عليه مديونية ✅️`;
+            const etBlock = `اسعار باقات e& اتصالات: 🟢\n${etPkgs}\nشروط اتصالات فقط: 🔴\n⛔️ لو خط اتصالات لازم يكون خطك نظام ١٥ قرش\n⛔️ بينزل فاتورة شهرية صغيرة بقيمة 13 ج بتدفعهم عادي\nعادي لو الخط عليه مديونية ✅️\nالتفعيل بالرقم - دفع بعد التفعيل ✅️`;
+            const vfBlock = `فودافون فليكسات 🔴\n${vfPkgs}\nالشروط:\nالدفع قبل التفعيل 🔴\nبالرقم وباسورد ابلكيشن انا فودافون 🔴`;
+            const footerBlock = `\n_____________\nلينك الجروب الخاص بيا:\n${settings.groupLink}`;
+
+            document.getElementById('offerPostTextarea').value = type === 'we' ? weBlock + footerBlock : (type === 'etisalat' ? etBlock + footerBlock : (type === 'vodafone' ? vfBlock + footerBlock : `${weBlock}\n_____________\n${etBlock}\n_____________\n${vfBlock}${footerBlock}`));
+        }
+
+        function copyOfferPost() { navigator.clipboard.writeText(document.getElementById('offerPostTextarea').value); alert('تم النسخ!'); }
+        function sendOfferPostWhatsApp() {
+            const phone = formatWhatsAppPhone(document.getElementById('directOfferPhone').value);
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(document.getElementById('offerPostTextarea').value)}`, '_blank');
+        }
+
+        // --- Bulk & Utility Actions ---
+        function bulkActivateAsCredit() {
+            const targetLines = getFilteredLines();
+            if (!targetLines.length) return;
+            if (!confirm(`تحويل (${targetLines.length} خط) إلى "تم التفعيل + آجل" وإضافتهم لخانة الآجل فوق؟`)) return;
+            targetLines.forEach(l => {
+                l.activated = true;
+                if (l.status !== 'paid') { l.status = 'credit'; l.paidAmount = 0; }
+            });
+            saveData();
+            renderApp();
+        }
+
+        function resetCycleStatus() {
+            if (!confirm('بدء دورة شهر جديد وتحويل الخطوط المعروضة إلى (لم تفعل + انتظار التجديد)؟')) return;
+            lines.forEach(l => {
+                if (currentTab === 'all' || l.cycle === currentTab) {
+                    l.activated = false;
+                    l.status = 'pending';
+                    l.paidAmount = 0;
+                }
+            });
+            saveData();
+            renderApp();
+        }
+
+        function deleteLine(id) {
+            if (!confirm('حذف هذا الرقم؟')) return;
+            lines = lines.filter(l => l.id !== id);
+            saveData();
+            renderApp();
+        }
+
+        function quickFilterDebt() {
+            const filterEl = document.getElementById('statusFilter');
+            filterEl.value = filterEl.value === 'unpaid_all' ? 'all' : 'unpaid_all';
+            renderApp();
+        }
+
+        function copyText(txt) { navigator.clipboard.writeText(txt); }
+
+        function exportExcel() {
+            let csv = '\uFEFFالاسم,الشركة والفاتورة,رقم التفعيل,رقم التواصل,الباقة,التكلفة,البيع,الربح,حالة التفعيل,حالة الدفع,الآجل المتبقي\n';
+            lines.forEach(l => {
+                const cName = (cycleLabels[l.cycle] || {}).name || l.cycle;
+                const profit = (Number(l.sale) || 0) - (Number(l.cost) || 0);
+                const debt = getRemainingDebt(l);
+                csv += `"${l.customer || 'بدون اسم'}","${cName}","'${l.activationNum}","'${getEffectiveContact(l)}","${l.packageName}","${l.cost}","${l.sale}","${profit}","${l.activated ? 'مفعل' : 'لم يفعل'}","${l.status}","${debt}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `كشف_خطوط_العمدة_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderApp();
+            initFirebaseConnection();
+        });
+    </script>
+</body>
+</html>
